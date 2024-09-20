@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,8 +9,14 @@
 <body>
     <div class="container">
         <h1>Gestión de Reservas</h1>
+        <form id="reservationsForm">
+            <label for="email">Correo electrónico:</label>
+            <input type="email" id="email" name="email" required>
+            <input type="submit" value="Ver Reservas">
+        </form>
         <div id="reservations"></div>
     </div>
+
     <script src="scripts.js"></script>
 </body>
 </html>

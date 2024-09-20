@@ -1,44 +1,17 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Registro de usuario
-    const registerForm = document.getElementById('registerForm');
-    if (registerForm) {
-        registerForm.addEventListener('submit', async (e) => {
+    // Obtener reservas
+    const reservationsForm = document.getElementById('reservationsForm');
+    if (reservationsForm) {
+        reservationsForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const formData = new FormData(registerForm);
-            formData.append('action', 'register');
+            const formData = new FormData(reservationsForm);
             try {
-                const response = await fetch('auth.php', {
+                const response = await fetch('manage_reservations.php', {
                     method: 'POST',
                     body: formData
                 });
                 const data = await response.json();
-                alert(data.message);
-                if (data.status === 'success') {
-                    window.location.href = 'login.html';
-                }
-            } catch (error) {
-                console.error('Error:', error);
-            }
-        });
-    }
-
-    // Inicio de sesión
-    const loginForm = document.getElementById('loginForm');
-    if (loginForm) {
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const formData = new FormData(loginForm);
-            formData.append('action', 'login');
-            try {
-                const response = await fetch('auth.php', {
-                    method: 'POST',
-                    body: formData
-                });
-                const data = await response.json();
-                alert(data.message);
-                if (data.status === 'success') {
-                    window.location.href = 'search.html';
-                }
+                displayReservations(data);
             } catch (error) {
                 console.error('Error:', error);
             }
@@ -64,11 +37,29 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Mostrar reservas
-    const reservationsDiv = document.getElementById('reservations');
-    if (reservationsDiv) {
-        fetchReservations();
-    }
+    // Obtener ubicación
+    document.getElementById('getLocation').addEventListener('click', () => {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition((position) => {
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+
+                // Usar una API para convertir lat/lon a una dirección
+                fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`)
+                    .then(response => response.json())
+                    .then(data => {
+                        document.getElementById('origin').value = data.locality || data.city || data.principalSubdivision;
+                    })
+                    .catch(error => {
+                        console.error('Error al obtener la dirección:', error);
+                    });
+            }, (error) => {
+                console.error('Error al obtener la ubicación:', error);
+            });
+        } else {
+            alert('Geolocalización no es soportada por este navegador.');
+        }
+    });
 });
 
 function displayFlights(flights) {
@@ -91,42 +82,16 @@ function displayFlights(flights) {
     resultsDiv.innerHTML = html;
 }
 
-async function reserveFlight(flightId) {
-    try {
-        const response = await fetch('reserve_flight.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: `flight_id=${flightId}`
-        });
-        const data = await response.json();
-        alert(data.message);
-        if (data.status === 'success') {
-            window.location.href = 'reservations.html';
-        }
-    } catch (error) {
-        console.error('Error:', error);
-    }
-}
-
-async function fetchReservations() {
-    try {
-        const response = await fetch('manage_reservations.php');
-        const data = await response.json();
-        displayReservations(data.reservations);
-    } catch (error) {
-        console.error('Error:', error);
-    }
-}
-
 function displayReservations(reservations) {
     const reservationsDiv = document.getElementById('reservations');
     if (reservations.length === 0) {
         reservationsDiv.innerHTML = '<p>No tienes reservas.</p>';
         return;
     }
-    let html = '<table><tr><th>ID Reserva</th><th>Vuelo</th><th>Origen</th><th>Destino</th><th>Salida</th><th>Estado</th></tr>';
+
+    let html = '<h2>Reservas</h2>';
+    html += '<table class="report-table"><thead><tr><th>ID Reserva</th><th>Vuelo</th><th>Origen</th><th>Destino</th><th>Salida</th><th>Estado</th></tr></thead><tbody>';
+    
     reservations.forEach(reservation => {
         html += `<tr>
             <td>${reservation.reservation_id}</td>
@@ -137,6 +102,7 @@ function displayReservations(reservations) {
             <td>${reservation.status}</td>
         </tr>`;
     });
-    html += '</table>';
+
+    html += '</tbody></table>';
     reservationsDiv.innerHTML = html;
 }
